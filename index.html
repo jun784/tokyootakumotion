@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        <title>famo.us</title>
+        <title>Tokyo Otaku Motion β</title>
         <meta name="viewport" content="width=1024, maximum-scale=1, user-scalable=no" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
@@ -15,68 +15,44 @@
     <body>
         <div id="main" class="container"></div>
         <div id="overlay" class="container"></div>
+        <script src="leap.js"></script>
 
-        <canvas id="picture"></canvas>
+        <canvas id="leap-overlay"></canvas>
         <script src="leap.js"></script>
         <script>
-        var canvas = document.getElementById("picture");
-        var width = canvas.width = document.body.clientWidth;
-        var height = canvas.height = document.body.clientHeight;
-        var ctx = canvas.getContext("2d");
+          var canvas = document.getElementById("leap-overlay");
 
-        ctx.translate(width/2, height/2);
-        ctx.save();
+          // fullscreen
+          canvas.width = document.body.clientWidth;
+          canvas.height = document.body.clientHeight;
 
-        // listen to Leap Motion
-        Leap.loop({enableGestures: true}, function(obj) {
-          if (obj.gestures.length > 0) {
-            obj.gestures.forEach(function(gesture) {
-              //output(gesture);
-            });
-          }
-
-          var width = canvas.width = document.body.clientWidth;
-          var height = canvas.height = document.body.clientHeight;
+          // create a rendering context
           var ctx = canvas.getContext("2d");
+          ctx.translate(canvas.width/2,canvas.height);
+          ctx.fillStyle = "rgba(0,0,0,0.7)";
 
-          ctx.translate(width/2,height/2);
-          ctx.save();
+          // render each frame
+          function draw(obj) {
+            // clear last frame
+            ctx.clearRect(-canvas.width/2,-canvas.height,canvas.width,canvas.height);
 
-          Leap.loop(function(obj) {
-            if (obj.hands.length < 1) return;
+            // render circles based on pointable positions
+            var pointablesMap = obj.pointablesMap;
+            for (var i in pointablesMap) {
+              // get the pointable's position
+              var pointable = pointablesMap[i];
+              var pos = pointable.tipPosition;
 
-            var x = obj.hands[0].palmNormal.x;
-            var z = obj.hands[0].palmNormal.z;
-
-            ctx.restore();
-            ctx.fillStyle = "rgba(0,0,0,0.4)";
-            ctx.fillRect(-width/2,-height/2,width,height);
-            ctx.save();
-
-            for (var i = 0; i<50; i++) {
-              var saturation = Math.round(Math.abs(90*z));
-              ctx.fillStyle = "hsl(" + i + "," + saturation + "%,40%)";
-              ctx.translate(i,0);
-              ctx.rotate(x*Math.PI/5);
-              ctx.fillRect(0,0,8+i/10,8+i/10);
+              // create a circle for each pointable
+              var radius = Math.min(600/Math.abs(pos.z),20);
+              ctx.beginPath();
+              ctx.arc(pos.x-radius/2,-pos.y-radius/2,radius,0,2*Math.PI);
+              ctx.fill();
             }
-          });
+          };
 
-        });
-
-        var outputDiv = document.getElementById("output");
-        function output(json) {
-          var div = document.createElement("div")
-          div.innerHTML = JSON.stringify(json) + "<br/>";
-          outputDiv.insertBefore(div, outputDiv.firstChild);
-        };
-
+          // listen to Leap Motion
+          Leap.loop(draw);
         </script>
-        <style>
-        body {
-          font-size: 10px;
-          font-family: monospace;
-        }
-        </style>
     </body>
 </html>
